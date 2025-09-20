@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Grid Glow - File Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff88;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Grid Background */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Glowing orbs */
+        .glow-orb {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.3) 0%, transparent 70%);
+            animation: float 8s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        .glow-orb:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .glow-orb:nth-child(2) {
+            top: 60%;
+            right: 15%;
+            animation-delay: -2s;
+        }
+
+        .glow-orb:nth-child(3) {
+            bottom: 20%;
+            left: 60%;
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px #00ff88;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px #00ff88; }
+            50% { text-shadow: 0 0 30px #00ff88, 0 0 40px #00ff88; }
+        }
+
+        .upload-section {
+            background: rgba(0, 20, 10, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .file-upload-area {
+            border: 2px dashed #00ff88;
+            border-radius: 10px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-area:hover {
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .file-upload-area.dragover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: scale(1.02);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px #00ff88;
+        }
+
+        .upload-subtext {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(0, 30, 15, 0.9);
+            border: 1px solid #00ff88;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 25px rgba(0, 255, 136, 0.4);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        .extractor-section {
+            background: rgba(0, 20, 10, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .extractor-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input[type="number"], button {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus, button:hover {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        button {
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            background: rgba(0, 30, 15, 0.9);
+            border: 1px solid #00ff88;
+            border-radius: 15px;
+            padding: 2rem;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+        }
+
+        .results-section::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results-section::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .results-section::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
+        }
+
+        .line-item {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid #00ff88;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            word-wrap: break-word;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .line-number {
+            color: #00ff88;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cc70);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .processing {
+            text-align: center;
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .extractor-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+    <div class="glow-orb"></div>
+    <div class="glow-orb"></div>
+    <div class="glow-orb"></div>
+
+    <div class="container">
+        <h1>◊ BLACK GRID GLOW ◊</h1>
+
+        <div class="upload-section">
+            <div class="file-upload-area" id="uploadArea">
+                <div class="upload-text">📁 DROP YOUR FILE HERE</div>
+                <div class="upload-subtext">or click to browse • Supports TXT files up to 100MB</div>
+                <input type="file" id="fileInput" accept=".txt" />
+            </div>
+            <div class="progress-bar hidden" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="stats-section hidden" id="statsSection">
+            <div class="stat-card">
+                <div class="stat-value" id="fileSize">-</div>
+                <div class="stat-label">FILE SIZE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lineCount">-</div>
+                <div class="stat-label">TOTAL LINES</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="charCount">-</div>
+                <div class="stat-label">CHARACTERS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="wordCount">-</div>
+                <div class="stat-label">WORDS</div>
+            </div>
+        </div>
+
+        <div class="extractor-section hidden" id="extractorSection">
+            <h3>◊ LINE EXTRACTOR ◊</h3>
+            <div class="extractor-controls">
+                <input type="number" id="lineNumberInput" placeholder="Number of lines" min="1" />
+                <button id="extractBtn">EXTRACT RANDOM LINES</button>
+                <button id="downloadBtn" class="hidden">DOWNLOAD RESULTS</button>
+            </div>
+        </div>
+
+        <div class="results-section hidden" id="resultsSection">
+            <h3>◊ EXTRACTED LINES ◊</h3>
+            <div id="extractedLines"></div>
+        </div>
+    </div>
+
+    <script>
+        let fileContent = '';
+        let fileLines = [];
+        let fileName = '';
+        let extractedContent = '';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const statsSection = document.getElementById('statsSection');
+        const extractorSection = document.getElementById('extractorSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const lineNumberInput = document.getElementById('lineNumberInput');
+        const extractBtn = document.getElementById('extractBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const extractedLines = document.getElementById('extractedLines');
+
+        // File upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        extractBtn.addEventListener('click', extractRandomLines);
+        downloadBtn.addEventListener('click', downloadResults);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.name.toLowerCase().endsWith('.txt')) {
+                alert('Please select a TXT file');
+                return;
+            }
+
+            fileName = file.name;
+            progressBar.classList.remove('hidden');
+            progressFill.style.width = '0%';
+
+            const reader = new FileReader();
+            
+            reader.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const progress = (e.loaded / e.total) * 100;
+                    progressFill.style.width = progress + '%';
+                }
+            };
+
+            reader.onload = function(e) {
+                fileContent = e.target.result;
+                progressFill.style.width = '100%';
+                
+                setTimeout(() => {
+                    progressBar.classList.add('hidden');
+                    analyzeFile();
+                }, 500);
+            };
+
+            reader.onerror = function() {
+                alert('Error reading file');
+                progressBar.classList.add('hidden');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function analyzeFile() {
+            if (!fileContent) return;
+
+            // Split into lines and filter empty lines for counting
+            fileLines = fileContent.split('\n');
+            const nonEmptyLines = fileLines.filter(line => line.trim() !== '');
+            
+            // Calculate statistics
+            const fileSize = formatFileSize(new Blob([fileContent]).size);
+            const lineCount = fileLines.length.toLocaleString();
+            const charCount = fileContent.length.toLocaleString();
+            const wordCount = fileContent.split(/\s+/).filter(word => word.length > 0).length.toLocaleString();
+
+            // Update statistics
+            document.getElementById('fileSize').textContent = fileSize;
+            document.getElementById('lineCount').textContent = lineCount;
+            document.getElementById('charCount').textContent = charCount;
+            document.getElementById('wordCount').textContent = wordCount;
+
+            // Show sections
+            statsSection.classList.remove('hidden');
+            extractorSection.classList.remove('hidden');
+
+            // Set max value for line input
+            lineNumberInput.max = fileLines.length;
+            lineNumberInput.placeholder = `Max: ${fileLines.length} lines`;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function extractRandomLines() {
+            const numLines = parseInt(lineNumberInput.value);
+            
+            if (!numLines || numLines < 1) {
+                alert('Please enter a valid number of lines');
+                return;
+            }
+
+            if (numLines > fileLines.length) {
+                alert(`Maximum ${fileLines.length} lines available`);
+                return;
+            }
+
+            extractBtn.disabled = true;
+            extractBtn.textContent = 'EXTRACTING...';
+            extractedLines.innerHTML = '<div class="processing">Processing...</div>';
+            resultsSection.classList.remove('hidden');
+
+            // Use setTimeout to allow UI to update
+            setTimeout(() => {
+                // Get random line indices
+                const randomIndices = getRandomIndices(fileLines.length, numLines);
+                randomIndices.sort((a, b) => a - b);
+
+                // Extract lines
+                const extracted = randomIndices.map(index => ({
+                    lineNumber: index + 1,
+                    content: fileLines[index]
+                }));
+
+                displayExtractedLines(extracted);
+                
+                // Prepare content for download
+                extractedContent = extracted.map(item => 
+                    `Line ${item.lineNumber}: ${item.content}`
+                ).join('\n');
+
+                extractBtn.disabled = false;
+                extractBtn.textContent = 'EXTRACT RANDOM LINES';
+                downloadBtn.classList.remove('hidden');
+            }, 100);
+        }
+
+        function getRandomIndices(max, count) {
+            const indices = new Set();
+            while (indices.size < count) {
+                indices.add(Math.floor(Math.random() * max));
+            }
+            return Array.from(indices);
+        }
+
+        function displayExtractedLines(extracted) {
+            extractedLines.innerHTML = '';
+            
+            extracted.forEach((item, index) => {
+                setTimeout(() => {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'line-item';
+                    lineDiv.innerHTML = `
+                        <span class="line-number">Line ${item.lineNumber}:</span>
+                        ${escapeHtml(item.content || '(empty line)')}
+                    `;
+                    extractedLines.appendChild(lineDiv);
+                }, index * 50);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function downloadResults() {
+            if (!extractedContent) return;
+
+            const blob = new Blob([extractedContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `extracted_lines_${fileName}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Add some keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'u') {
+                e.preventDefault();
+                fileInput.click();
+            }
+            if (e.key === 'Enter' && lineNumberInput === document.activeElement) {
+                extractRandomLines();
+            }
+        });
+    </script>
+</body>
+</html>
