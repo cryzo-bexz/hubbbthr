@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Grid Glow - File Processor</title>
+    <title>Sea-Glow - File Processor</title>
     <style>
         * {
             margin: 0;
@@ -331,7 +331,7 @@
     <div class="glow-orb"></div>
 
     <div class="container">
-        <h1>◊ BLACK GRID GLOW ◊</h1>
+        <h1>◊ SEA-GLOW ◊</h1>
 
         <div class="upload-section">
             <div class="file-upload-area" id="uploadArea">
@@ -536,10 +536,8 @@
 
                 displayExtractedLines(extracted);
                 
-                // Prepare content for download
-                extractedContent = extracted.map(item => 
-                    `Line ${item.lineNumber}: ${item.content}`
-                ).join('\n');
+                // Prepare content for download - just the lines without numbers
+                extractedContent = extracted.map(item => item.content).join('\n');
 
                 extractBtn.disabled = false;
                 extractBtn.textContent = 'EXTRACT RANDOM LINES';
